@@ -25,11 +25,39 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [name, setName] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Lógica de autenticação aqui
-    console.log({ email, password, name })
+    setError(null)
+    setLoading(true)
+
+    try {
+      const res = await fetch(isLogin ? '/api/auth/login' : '/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(isLogin ? { email, password } : { name, email, password })
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data?.error || 'Erro de autenticação')
+      }
+
+      // Verifica role e redireciona
+      const meRes = await fetch('/api/auth/me')
+      const meData = await meRes.json()
+      if (meData.user?.role === 'ADMIN') {
+        window.location.href = '/admin'
+      } else {
+        window.location.href = '/'
+      }
+    } catch (err: any) {
+      setError(err.message || 'Erro interno')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -108,6 +136,8 @@ export default function LoginPage() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
+              {error && <p className="text-sm text-red-600">{error}</p>}
+
               {!isLogin && (
                 <div className="space-y-2">
                   <Label htmlFor="name">Nome Completo</Label>
@@ -194,18 +224,21 @@ export default function LoginPage() {
 
               <Button 
                 type="submit"
-                className="w-full h-11 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold shadow-lg transition-all duration-300 hover:shadow-xl"
+                disabled={loading}
+                className="w-full h-11 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold shadow-lg transition-all duration-300 hover:shadow-xl disabled:opacity-60"
               >
-                {isLogin ? (
-                  <>
-                    <LogIn className="w-5 h-5 mr-2" />
-                    Entrar
-                  </>
-                ) : (
-                  <>
-                    <UserPlus className="w-5 h-5 mr-2" />
-                    Criar Conta
-                  </>
+                {loading ? (isLogin ? 'Entrando...' : 'Criando Conta...') : (
+                  isLogin ? (
+                    <>
+                      <LogIn className="w-5 h-5 mr-2" />
+                      Entrar
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="w-5 h-5 mr-2" />
+                      Criar Conta
+                    </>
+                  )
                 )}
               </Button>
             </form>
