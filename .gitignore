@@ -1,0 +1,19 @@
+# Node modules
+node_modules/
+
+# Next.js
+.next/
+
+# Environment variables
+.env
+.env.local
+
+# Prisma DB
+prisma/dev.db
+
+# Logs
+npm-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
